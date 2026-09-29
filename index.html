@@ -1,1 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Name | DevOps Engineer</title>
 
+  <!-- Manrope for headings and text, JetBrains Mono only for the pipeline log -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ---------- 1. Design tokens: change these to re-theme the page ---------- */
+    :root {
+      --bg: #EDF0F5;
+      --surface: #FFFFFF;
+      --ink: #101828;
+      --muted: #52607A;
+      --line: #D3DAE6;
+      --brand: #3B5BFF;
+      --ok: #12A150;
+      --warn: #E8A317;
+      --bad: #D92D20;
+      --log-bg: #0F172A;
+      --log-ink: #D6E2F5;
+      --radius: 14px;
+      --sans: "Manrope", "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #0B1120;
+      --surface: #131C31;
+      --ink: #E6ECF8;
+      --muted: #96A3C0;
+      --line: #25314F;
+      --brand: #8AA0FF;
+      --log-bg: #060B17;
+    }
+
+    /* ---------- 2. Base ---------- */
+    * { box-sizing: border-box; margin: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 1.05rem; line-height: 1.65; transition: background .3s, color .3s; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+    .wrap { width: min(1080px, 100% - 2.5rem); margin-inline: auto; }
+    section { padding-block: 4.5rem; }
+    h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.15; margin-bottom: 2rem; letter-spacing: -0.01em; }
+    h3 { font-weight: 800; }
+
+    /* ---------- 3. Header ---------- */
+    header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .bar { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { font-weight: 800; text-decoration: none; font-size: 1.15rem; }
+    nav { display: flex; align-items: center; gap: 1.5rem; }
+    nav a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: .95rem; }
+    nav a:hover { color: var(--ink); }
+    .icon-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: .35rem .9rem; font: 600 .9rem var(--sans); cursor: pointer; }
+
+    /* ---------- 4. Hero ---------- */
+    .hero { padding-top: 4rem; }
+    .hero h1 { font-size: clamp(2.4rem, 6.5vw, 4.6rem); font-weight: 800; line-height: 1.04; letter-spacing: -0.03em; max-width: 16ch; }
+    .hero .lead { color: var(--muted); max-width: 56ch; margin-top: 1.3rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
+    .btn { display: inline-block; text-decoration: none; cursor: pointer; font: 700 1rem var(--sans); padding: .8rem 1.4rem; border-radius: 999px; border: 2px solid var(--ink); transition: transform .15s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    [data-theme="dark"] .btn.primary { color: #0B1120; }
+    .btn.ghost { background: transparent; color: var(--ink); }
+
+    /* ---------- 5. Pipeline runner (the memorable part) ---------- */
+    .pipeline { margin-top: 3rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .pipe-head { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 1rem 1.3rem; border-bottom: 1px solid var(--line); }
+    .pipe-head h3 { font-size: 1.05rem; }
+    .pipe-head p { color: var(--muted); font-size: .9rem; }
+    .pipe-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .pipe-controls label { display: flex; gap: .4rem; align-items: center; font-size: .92rem; color: var(--muted); cursor: pointer; }
+    .pipe-controls input { accent-color: var(--bad); width: 1rem; height: 1rem; }
+    .run { background: var(--ink); color: var(--bg); border: 0; border-radius: 999px; padding: .55rem 1.2rem; font: 700 .95rem var(--sans); cursor: pointer; }
+    .run:disabled { opacity: .5; cursor: wait; }
+
+    .stages { list-style: none; padding: 1.4rem 1.3rem; display: grid; grid-template-columns: repeat(5, 1fr); gap: .8rem; }
+    .stage { position: relative; padding: .9rem .9rem 1rem; border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); transition: border-color .25s, background .25s; }
+    .stage b { display: block; font-size: .98rem; }
+    .stage span { font-size: .85rem; color: var(--muted); }
+    .stage .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--line); margin-right: .45rem; }
+    .stage[data-state="running"] { border-color: var(--warn); }
+    .stage[data-state="running"] .dot { background: var(--warn); animation: pulse 1s infinite; }
+    .stage[data-state="success"] { border-color: var(--ok); }
+    .stage[data-state="success"] .dot { background: var(--ok); }
+    .stage[data-state="failed"] { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 8%, var(--bg)); }
+    .stage[data-state="failed"] .dot { background: var(--bad); }
+    .stage[data-state="skipped"] { opacity: .5; }
+    @keyframes pulse { 50% { opacity: .3; } }
+
+    .log { background: var(--log-bg); color: var(--log-ink); font: 400 .85rem/1.7 var(--mono); padding: 1.1rem 1.3rem; height: 230px; overflow-y: auto; }
+    .log .t { color: #6B7A99; margin-right: .7rem; }
+    .log .ok { color: #4ADE80; } .log .err { color: #F87171; } .log .warn { color: #FBBF24; }
+    .log-empty { color: #6B7A99; }
+
+    /* ---------- 6. Skills ---------- */
+    .skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; }
+    .skill-group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem; }
+    .skill-group h3 { font-size: 1.05rem; margin-bottom: .8rem; }
+    .skill-group ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+    .skill-group li { font-size: .88rem; padding: .18rem .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); }
+
+    /* ---------- 7. Experience timeline (a real sequence) ---------- */
+    .timeline { border-left: 2px solid var(--line); margin-left: .5rem; padding-left: 1.8rem; display: grid; gap: 2.2rem; }
+    .job { position: relative; }
+    .job::before { content: ""; position: absolute; left: calc(-1.8rem - 7px); top: .5rem; width: 12px; height: 12px; border-radius: 50%; background: var(--brand); border: 3px solid var(--bg); box-sizing: content-box; }
+    .job h3 { font-size: 1.2rem; }
+    .job .when { color: var(--muted); font-size: .92rem; }
+    .job ul { margin: .6rem 0 0 1.1rem; color: var(--muted); }
+    .job li { margin-bottom: .25rem; max-width: 62ch; }
+
+    /* ---------- 8. Case studies ---------- */
+    .case { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 3rem; padding: 1.8rem 0; border-top: 1px solid var(--line); }
+    .case:last-child { border-bottom: 1px solid var(--line); }
+    .case h3 { font-size: 1.4rem; margin-bottom: .4rem; }
+    .case p { color: var(--muted); }
+    .case dl { display: grid; gap: .8rem; }
+    .case dt { font-weight: 800; font-size: .95rem; }
+    .case dd { margin: 0; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; }
+    .tag { font-size: .82rem; padding: .12rem .65rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+
+    /* ---------- 9. Certifications and contact ---------- */
+    .certs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .cert { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.3rem; }
+    .cert small { color: var(--muted); }
+    .contact-box { background: var(--ink); color: var(--bg); border-radius: 20px; padding: clamp(1.8rem, 5vw, 3.5rem); }
+    .contact-box h2 { margin-bottom: .8rem; }
+    .contact-box p { opacity: .8; max-width: 48ch; }
+    .contact-box .actions .btn { border-color: var(--bg); }
+    .contact-box .btn.primary { background: var(--bg); color: var(--ink); }
+    .contact-box .btn.ghost { color: var(--bg); }
+    footer { padding: 2rem 0; color: var(--muted); font-size: .92rem; }
+
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translate(-50%, 150%); background: var(--ink); color: var(--bg); padding: .8rem 1.3rem; border-radius: 999px; transition: transform .3s; z-index: 20; }
+    .toast.show { transform: translate(-50%, 0); }
+
+    /* ---------- 10. Responsive ---------- */
+    @media (max-width: 860px) { .stages { grid-template-columns: 1fr 1fr; } .case { grid-template-columns: 1fr; gap: 1rem; } }
+    @media (max-width: 640px) { nav a.hide-sm { display: none; } section { padding-block: 3.2rem; } .stages { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap bar">
+      <a class="logo" href="#top" id="logoName">Your Name</a>
+      <nav>
+        <a class="hide-sm" href="#skills">Skills</a>
+        <a class="hide-sm" href="#experience">Experience</a>
+        <a class="hide-sm" href="#projects">Projects</a>
+        <a class="hide-sm" href="#contact">Contact</a>
+        <button class="icon-btn" id="themeBtn" aria-label="Switch between light and dark theme">Dark mode</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO + PIPELINE -->
+    <section class="hero">
+      <div class="wrap">
+        <h1>I automate the path from commit to production.</h1>
+        <p class="lead">DevOps engineer focused on CI/CD, cloud infrastructure and reliable releases. I turn slow, manual deployments into pipelines that a team can trust. Run the demo below to see one in action.</p>
+        <div class="actions">
+          <a class="btn primary" href="#projects">See case studies</a>
+          <a class="btn ghost" href="#contact">Contact me</a>
+        </div>
+
+        <div class="pipeline">
+          <div class="pipe-head">
+            <div>
+              <h3>Deploy pipeline demo</h3>
+              <p>Run a simulated release, or break the tests to see how the pipeline stops.</p>
+            </div>
+            <div class="pipe-controls">
+              <label><input type="checkbox" id="breakTests" /> Break the tests</label>
+              <button class="run" id="runBtn">Run pipeline</button>
+            </div>
+          </div>
+          <ol class="stages" id="stages"></ol>
+          <div class="log" id="log" role="log" aria-live="polite"><span class="log-empty">Waiting for a run. Press "Run pipeline".</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills">
+      <div class="wrap">
+        <h2>Toolbox</h2>
+        <div class="skills" id="skillGrid"></div>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section id="experience">
+      <div class="wrap">
+        <h2>Experience</h2>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section id="projects">
+      <div class="wrap">
+        <h2>Case studies</h2>
+        <div id="caseList"></div>
+      </div>
+    </section>
+
+    <!-- CERTIFICATIONS -->
+    <section id="certs">
+      <div class="wrap">
+        <h2>Certifications</h2>
+        <div class="certs" id="certGrid"></div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="wrap">
+        <div class="contact-box">
+          <h2>Have a release process that needs fixing?</h2>
+          <p>Send me a message about your team, your stack and what slows you down. I'll reply within two working days.</p>
+          <div class="actions">
+            <a class="btn primary" id="mailBtn" href="mailto:you@example.com">Email me</a>
+            <button class="btn ghost" id="copyBtn">Copy email address</button>
+            <a class="btn ghost" href="https://github.com/your-username" target="_blank" rel="noopener">GitHub</a>
+            <a class="btn ghost" href="https://linkedin.com/in/your-username" target="_blank" rel="noopener">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">Built with plain HTML, CSS and JavaScript.</div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* =====================================================
+       EDIT HERE: all the page content lives in these objects.
+       Replace the placeholders with your real details.
+       ===================================================== */
+    const profile = { name: "Your Name", email: "you@example.com" };
+
+    const skills = [
+      { group: "Cloud", items: ["AWS", "Azure", "EC2", "S3", "IAM", "VPC"] },
+      { group: "CI/CD", items: ["Jenkins", "GitHub Actions", "GitLab CI", "ArgoCD"] },
+      { group: "Infrastructure as code", items: ["Terraform", "Ansible", "CloudFormation"] },
+      { group: "Containers", items: ["Docker", "Kubernetes", "Helm"] },
+      { group: "Monitoring", items: ["Prometheus", "Grafana", "CloudWatch", "ELK"] },
+      { group: "Scripting and OS", items: ["Bash", "Python", "Linux", "Git"] }
+    ];
+
+    const jobs = [
+      {
+        role: "DevOps Engineer", company: "Company Name", when: "2024 to present",
+        points: [
+          "Built and maintained CI/CD pipelines that build, test and deploy services automatically.",
+          "Wrote Terraform modules so environments can be created the same way every time.",
+          "Set up dashboards and alerts so the team finds problems before users do."
+        ]
+      },
+      {
+        role: "Junior DevOps Engineer", company: "Previous Company", when: "2022 to 2024",
+        points: [
+          "Containerized applications with Docker and helped move them to Kubernetes.",
+          "Automated routine server tasks with Bash and Python scripts."
+        ]
+      }
+    ];
+
+    const cases = [
+      {
+        title: "Zero-touch deployment pipeline",
+        summary: "A CI/CD pipeline for a microservices app.",
+        problem: "Releases were manual, slow and depended on one person.",
+        solution: "A pipeline that builds an image, runs tests and a security scan, then rolls out to Kubernetes.",
+        result: "Any teammate can release safely with a merge to main.",
+        tags: ["GitHub Actions", "Docker", "Kubernetes"]
+      },
+      {
+        title: "Cloud infrastructure as code",
+        summary: "A repeatable AWS environment defined in Terraform.",
+        problem: "Servers were created by hand, so staging and production drifted apart.",
+        solution: "Reusable Terraform modules for networking, compute and storage, with remote state.",
+        result: "A new environment now takes minutes instead of days.",
+        tags: ["Terraform", "AWS", "Git"]
+      },
+      {
+        title: "Monitoring and alerting stack",
+        summary: "Metrics, dashboards and on-call alerts.",
+        problem: "The team learned about outages from customers.",
+        solution: "Prometheus and Grafana dashboards with alert rules that notify the right channel.",
+        result: "Issues are seen and triaged before they reach users.",
+        tags: ["Prometheus", "Grafana", "Linux"]
+      }
+    ];
+
+    const certs = [
+      { name: "AWS Certified Cloud Practitioner", meta: "Replace with your certification" },
+      { name: "HashiCorp Terraform Associate", meta: "Replace with your certification" },
+      { name: "Certified Kubernetes Administrator", meta: "Replace with your certification" }
+    ];
+
+    /* ---------- Render the content sections from the data above ---------- */
+    document.title = `${profile.name} | DevOps Engineer`;
+    document.getElementById("logoName").textContent = profile.name;
+    document.getElementById("mailBtn").href = "mailto:" + profile.email;
+
+    document.getElementById("skillGrid").innerHTML = skills.map(s => `
+      <div class="skill-group">
+        <h3>${s.group}</h3>
+        <ul>${s.items.map(i => `<li>${i}</li>`).join("")}</ul>
+      </div>`).join("");
+
+    document.getElementById("timeline").innerHTML = jobs.map(j => `
+      <article class="job">
+        <h3>${j.role}, ${j.company}</h3>
+        <div class="when">${j.when}</div>
+        <ul>${j.points.map(p => `<li>${p}</li>`).join("")}</ul>
+      </article>`).join("");
+
+    document.getElementById("caseList").innerHTML = cases.map(c => `
+      <article class="case">
+        <div>
+          <h3>${c.title}</h3>
+          <p>${c.summary}</p>
+          <div class="tags">${c.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+        </div>
+        <dl>
+          <div><dt>Problem</dt><dd>${c.problem}</dd></div>
+          <div><dt>What I built</dt><dd>${c.solution}</dd></div>
+          <div><dt>Outcome</dt><dd>${c.result}</dd></div>
+        </dl>
+      </article>`).join("");
+
+    document.getElementById("certGrid").innerHTML = certs.map(c => `
+      <div class="cert"><b>${c.name}</b><br><small>${c.meta}</small></div>`).join("");
+
+    /* ---------- Pipeline runner ---------- */
+    const stages = [
+      { name: "Commit", note: "git push", logs: ["Push received on branch main", "Webhook triggered the pipeline"] },
+      { name: "Build", note: "docker build", logs: ["Pulling base image", "Installing dependencies", "Image built: app:1.4.2"] },
+      { name: "Test", note: "unit and API tests", logs: ["Running 48 unit tests", "Running 12 API tests"], failLog: "3 tests failed: checkout_total, login_timeout, cart_empty" },
+      { name: "Scan", note: "security check", logs: ["Scanning image for vulnerabilities", "No critical issues found"] },
+      { name: "Deploy", note: "kubectl rollout", logs: ["Applying manifests to the cluster", "Rolling update: 3 of 3 pods ready", "Health check passed"] }
+    ];
+
+    const stageList = document.getElementById("stages");
+    const logBox = document.getElementById("log");
+    const runBtn = document.getElementById("runBtn");
+    const breakBox = document.getElementById("breakTests");
+
+    function drawStages() {
+      stageList.innerHTML = stages.map((s, i) => `
+        <li class="stage" data-state="idle" id="stage-${i}">
+          <b><span class="dot"></span>${s.name}</b>
+          <span>${s.note}</span>
+        </li>`).join("");
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    let startTime = 0;
+
+    function log(text, kind = "") {
+      const secs = ((Date.now() - startTime) / 1000).toFixed(1).padStart(4, "0");
+      const line = document.createElement("div");
+      line.innerHTML = `<span class="t">[${secs}s]</span><span class="${kind}">${text}</span>`;
+      logBox.appendChild(line);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    const setState = (i, state) => document.getElementById("stage-" + i).dataset.state = state;
+
+    async function runPipeline() {
+      runBtn.disabled = true;
+      drawStages();
+      logBox.innerHTML = "";
+      startTime = Date.now();
+      log("Pipeline started");
+
+      for (let i = 0; i < stages.length; i++) {
+        const s = stages[i];
+        setState(i, "running");
+        log(`Stage: ${s.name}`, "warn");
+
+        for (const line of s.logs) { await sleep(450); log(line); }
+
+        // If "Break the tests" is ticked, the Test stage fails and everything after it is skipped
+        if (s.name === "Test" && breakBox.checked) {
+          await sleep(450);
+          log(s.failLog, "err");
+          setState(i, "failed");
+          for (let j = i + 1; j < stages.length; j++) setState(j, "skipped");
+          log("Pipeline stopped. Nothing was deployed.", "err");
+          log("Alert sent to the on-call channel", "warn");
+          runBtn.disabled = false;
+          return;
+        }
+        await sleep(300);
+        setState(i, "success");
+        log(`${s.name} passed`, "ok");
+      }
+      log("Release complete. Version 1.4.2 is live.", "ok");
+      runBtn.disabled = false;
+    }
+
+    runBtn.addEventListener("click", runPipeline);
+    drawStages();
+
+    /* ---------- Copy email with a toast message ---------- */
+    const toast = document.getElementById("toast");
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(profile.email);
+        showToast("Email address copied");
+      } catch (e) {
+        showToast("Copy failed. Please copy it manually: " + profile.email);
+      }
+    });
+
+    /* ---------- Light and dark theme (remembered between visits) ---------- */
+    const themeBtn = document.getElementById("themeBtn");
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      themeBtn.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+      try { localStorage.setItem("theme", theme); } catch (e) { /* storage can be blocked */ }
+    }
+    let saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (e) {}
+    applyTheme(saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    themeBtn.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+  </script>
+</body>
+</html>
